@@ -1,0 +1,5 @@
+# Minimal machine.conf — only required fields
+LINUX_ESP_UUID="D728-8DD1"
+BOOTLOADER_ID="gentoo"
+ESP_MOUNT="/boot"
+GPG_KEY_NAME="grub"

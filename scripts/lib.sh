@@ -26,7 +26,7 @@ _resolve_repo_root() {
     cd -P "$script_dir/.." && pwd
 }
 
-REPO_ROOT="$(_resolve_repo_root)"
+REPO_ROOT="${REPO_ROOT:-$(_resolve_repo_root)}"
 readonly REPO_ROOT
 
 # ---------------------------------------------------------------------------

@@ -26,7 +26,7 @@ load_config
 grub_default_set() {
     local key="$1"
     local value="$2"
-    local file="/etc/default/grub"
+    local file="${3:-/etc/default/grub}"
 
     # Escape key for use in regex (handle potential metacharacters)
     local escaped_key
@@ -47,7 +47,7 @@ grub_default_set() {
 # Remove a key from /etc/default/grub
 grub_default_remove() {
     local key="$1"
-    local file="/etc/default/grub"
+    local file="${2:-/etc/default/grub}"
 
     local escaped_key
     escaped_key="$(printf '%s' "$key" | sed 's/[.[\*^$()+?{|]/\\&/g')"
