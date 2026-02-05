@@ -1,0 +1,102 @@
+# gentoo-secureboot machine configuration
+# Copy this file to machine.conf and fill in your values.
+# machine.conf is gitignored — never commit it.
+#
+# Find your values with:
+#   blkid | grep -i fat          # ESP UUIDs
+#   blkid | grep -i luks         # LUKS UUID
+#   lvs                          # LVM volume groups and logical volumes
+#   cat /etc/fstab               # Mount points and PARTUUIDs
+
+# ==============================================================================
+# Disk Identifiers
+# ==============================================================================
+
+# Linux EFI System Partition — filesystem UUID (the FAT32 UUID shown by blkid)
+LINUX_ESP_UUID=""
+# Example: LINUX_ESP_UUID="D728-8DD1"
+
+# Linux ESP PARTUUID — used in /etc/fstab
+LINUX_ESP_PARTUUID=""
+# Example: LINUX_ESP_PARTUUID="c12a7328-f81f-11d2-ba4b-00a0c93ec93b"
+
+# Windows EFI System Partition — filesystem UUID (for GRUB chainloader)
+# Leave empty if not dual-booting with Windows.
+WINDOWS_ESP_UUID=""
+# Example: WINDOWS_ESP_UUID="90B1-2A22"
+
+# ==============================================================================
+# LUKS / LVM (leave empty if not using disk encryption)
+# ==============================================================================
+
+# LUKS container UUID (the UUID of the encrypted partition)
+LUKS_UUID=""
+# Example: LUKS_UUID="4c53311c-c455-4952-969b-5324e2c1576c"
+
+# Name for the LUKS mapping (used in rd.luks.name=<uuid>=<name>)
+LUKS_MAPPING_NAME="gentoo-lvm"
+
+# Allow TRIM/discard on LUKS (true/false) — slight security tradeoff for SSD perf
+LUKS_ALLOW_DISCARDS="true"
+
+# LVM volume group name
+LVM_VG=""
+# Example: LVM_VG="gentoo-vg0"
+
+# LVM logical volume for root
+LVM_LV_ROOT=""
+# Example: LVM_LV_ROOT="root"
+
+# LVM logical volume for swap (leave empty if no swap LV)
+LVM_LV_SWAP=""
+# Example: LVM_LV_SWAP="swap"
+
+# ==============================================================================
+# Root Filesystem
+# ==============================================================================
+
+# Root filesystem type
+ROOT_FSTYPE="xfs"
+
+# Root mount options (used in rootflags= kernel parameter)
+# Leave empty for defaults.
+ROOT_MOUNT_OPTIONS=""
+# Example: ROOT_MOUNT_OPTIONS="rw,relatime,attr2,inode64,logbufs=8,logbsize=32k,noquota"
+
+# ==============================================================================
+# Kernel Command Line
+# ==============================================================================
+
+# Extra kernel command line parameters (appended to auto-generated ones)
+EXTRA_CMDLINE=""
+# Example: EXTRA_CMDLINE="amdgpu.dcdebugmask=0x410"
+
+# Default kernel command line (GRUB_CMDLINE_LINUX_DEFAULT)
+CMDLINE_DEFAULT="quiet systemd.show_status=y"
+
+# ==============================================================================
+# GRUB
+# ==============================================================================
+
+# UEFI boot menu entry name
+BOOTLOADER_ID="gentoo"
+
+# ESP mount point
+ESP_MOUNT="/boot"
+
+# ==============================================================================
+# GPG
+# ==============================================================================
+
+# GPG key UID used for signing boot files
+GPG_KEY_NAME="grub"
+
+# ==============================================================================
+# GRUB Password (optional)
+# ==============================================================================
+
+# If set, GRUB shell/edit access requires this password.
+# Normal boot remains unrestricted.
+# Generate with: grub-mkpasswd-pbkdf2
+# GRUB_PASSWORD_HASH=""
+# Example: GRUB_PASSWORD_HASH="grub.pbkdf2.sha512.10000.ABC...123"

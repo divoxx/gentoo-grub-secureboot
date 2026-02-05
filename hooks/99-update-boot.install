@@ -1,0 +1,27 @@
+#!/bin/bash
+# 99-update-boot.install — installkernel hook for gentoo-secureboot
+#
+# Runs after kernel installation to regenerate GRUB config and
+# GPG-sign all boot files. Placed in /etc/kernel/install.d/.
+#
+# Runs AFTER 91-sbctl.install (which PE-signs the kernel).
+#
+# Note: If the GPG key has a passphrase, gpg-agent must be running.
+# The Gentoo wiki recommends no passphrase for root-only keys on
+# encrypted root (LUKS protects at rest).
+
+COMMAND="$1"
+
+case "$COMMAND" in
+    add)
+        if command -v update-boot &>/dev/null; then
+            update-boot
+        elif [[ -x /usr/local/sbin/update-boot ]]; then
+            /usr/local/sbin/update-boot
+        else
+            echo "WARNING: update-boot not found — boot files not signed" >&2
+        fi
+        ;;
+esac
+
+exit 0

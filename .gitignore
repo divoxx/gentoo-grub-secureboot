@@ -1,0 +1,26 @@
+# Machine-specific configuration (contains UUIDs, password hashes, etc.)
+machine.conf
+
+# GPG keys and signatures
+*.sig
+*.pub
+*.gpg
+*.key
+*.pem
+*.crt
+*.der
+
+# Generated files
+grub/initial.cfg
+grub/initial.cfg.sig
+
+# Backup files
+*.bak
+*.orig
+*~
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo

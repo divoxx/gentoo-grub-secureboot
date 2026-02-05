@@ -1,0 +1,68 @@
+# Modules to embed in the standalone GRUB EFI binary via --modules.
+# These are pre-loaded into core.img — available immediately without
+# loading from disk (and thus without needing GPG signatures).
+#
+# Keep this list in sync with what grub-mkconfig generates.
+# Check with: grep 'insmod ' /boot/grub/grub.cfg | sort -u
+
+# Core boot functionality
+normal
+configfile
+linux
+echo
+reboot
+sleep
+test
+true
+
+# Search commands (used by grub-mkconfig to find partitions)
+search
+search_fs_uuid
+search_fs_file
+
+# Filesystem and partition support
+ext2
+fat
+xfs
+part_gpt
+part_msdos
+lvm
+gzio
+
+# Cryptographic modules for GPG verification
+pgp
+gcry_sha512
+gcry_rsa
+gcry_dsa
+
+# LUKS / encrypted boot support
+cryptodisk
+luks
+luks2
+pbkdf2
+gcry_rijndael
+gcry_sha256
+
+# Display and graphics
+all_video
+efi_gop
+efi_uga
+vbe
+vga
+video_bochs
+video_cirrus
+ieee1275_fb
+gfxterm
+gfxmenu
+font
+png
+jpeg
+
+# Chainloading (for Windows dual-boot)
+chain
+
+# Environment and utility
+loadenv
+minicmd
+gettext
+bli
