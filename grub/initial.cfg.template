@@ -1,0 +1,27 @@
+# GRUB Initial Configuration (embedded in standalone binary)
+#
+# This config runs before the on-disk grub.cfg is loaded.
+# It establishes GPG signature enforcement, then hands off to the
+# real config. Since this file is embedded in the signed EFI binary,
+# it cannot be tampered with without invalidating the PE signature.
+#
+# Template variables (replaced by build-grub.sh):
+#   %%LINUX_ESP_UUID%%  — FAT32 UUID of the Linux ESP
+
+# Enforce GPG signature verification for ALL files GRUB loads
+set check_signatures=enforce
+export check_signatures
+
+# Locate the ESP and load the full GRUB configuration
+search --no-floppy --fs-uuid --set=root %%LINUX_ESP_UUID%%
+set prefix=($root)/grub
+configfile $prefix/grub.cfg
+
+# If grub.cfg fails to boot, warn and reboot
+echo ""
+echo "ERROR: grub.cfg failed to boot the system."
+echo "       This may indicate a missing or invalid GPG signature."
+echo "       Rebooting in 30 seconds..."
+echo ""
+sleep 30
+reboot

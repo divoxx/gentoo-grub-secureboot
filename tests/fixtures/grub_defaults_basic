@@ -1,0 +1,6 @@
+# /etc/default/grub — test fixture
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="Gentoo"
+GRUB_CMDLINE_LINUX=""
+#GRUB_CMDLINE_LINUX_DEFAULT="quiet"

@@ -1,0 +1,4 @@
+# Missing LINUX_ESP_UUID (required)
+BOOTLOADER_ID="gentoo"
+ESP_MOUNT="/boot"
+GPG_KEY_NAME="grub"

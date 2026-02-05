@@ -1,0 +1,31 @@
+#!/bin/bash
+# 26_windows — Custom Windows Boot Entry for grub-mkconfig
+#
+# This file is installed to /etc/grub.d/26_windows by install.sh
+# with the Windows ESP UUID baked in. The version in the repo serves
+# as the template source.
+#
+# When GRUB loads the Windows chainloader, GPG verification is
+# temporarily disabled (UEFI Secure Boot still validates the
+# Microsoft-signed bootmgfw.efi).
+#
+# Note: set check_signatures=no is scoped to this menuentry block.
+# GRUB restores the parent scope (enforce) when the entry exits,
+# whether by successful chainload or failure.
+
+# installed by gentoo-secureboot — do not edit
+# source UUID is baked in by install.sh
+WINDOWS_UUID="%%WINDOWS_ESP_UUID%%"
+
+if [[ -z "$WINDOWS_UUID" || "$WINDOWS_UUID" == "%%WINDOWS_ESP_UUID%%" ]]; then
+    echo "Warning: 26_windows: WINDOWS_ESP_UUID not configured" >&2
+    exit 0
+fi
+
+cat << GRUB
+menuentry "Windows Boot Manager" --class windows --class os {
+    set check_signatures=no
+    search --fs-uuid --set=root ${WINDOWS_UUID}
+    chainloader /EFI/Microsoft/Boot/bootmgfw.efi
+}
+GRUB
