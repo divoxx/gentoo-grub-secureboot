@@ -24,21 +24,7 @@ IS_ROOT=false
 [[ $EUID -eq 0 ]] && IS_ROOT=true
 
 # Try to load config; continue without it for degraded mode
-if [[ -f "$MACHINE_CONF" ]]; then
-    # Verify permissions before sourcing (runs as root)
-    local_perms="$(stat -c '%a' "$MACHINE_CONF" 2>/dev/null || echo "000")"
-    if [[ "${local_perms: -1}" != "0" ]]; then
-        msg_warn "machine.conf is world-accessible (mode $local_perms) — skipping"
-    else
-        # shellcheck source=../machine.conf.example
-        source "$MACHINE_CONF"
-    fi
-else
-    msg_warn "machine.conf not found — using defaults"
-    ESP_MOUNT="${ESP_MOUNT:-/boot}"
-    BOOTLOADER_ID="${BOOTLOADER_ID:-gentoo}"
-    GPG_KEY_NAME="${GPG_KEY_NAME:-grub}"
-fi
+try_load_config || true
 
 # ---------------------------------------------------------------------------
 # Counters
@@ -248,9 +234,9 @@ check_efi_boot_entry() {
         return
     fi
 
-    if efibootmgr | grep -qi "$BOOTLOADER_ID"; then
+    if efibootmgr | grep -qiF "$BOOTLOADER_ID"; then
         audit_pass "EFI boot entry for '$BOOTLOADER_ID' exists"
-        efibootmgr | grep -i "$BOOTLOADER_ID"
+        efibootmgr | grep -iF "$BOOTLOADER_ID"
     else
         audit_fail "No EFI boot entry for '$BOOTLOADER_ID'"
     fi

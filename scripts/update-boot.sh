@@ -22,6 +22,14 @@ source "${SCRIPT_DIR}/lib.sh"
 require_root
 load_config
 
+# Prevent concurrent execution
+readonly _LOCKFILE="/var/lock/secureboot-update.lock"
+exec 9>"$_LOCKFILE"
+if ! flock -n 9; then
+    msg_error "Another instance of update-boot is running. Aborting."
+    exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -56,15 +64,23 @@ main() {
         fi
         exit 1
     fi
-
-    # Clean up backups on success
-    rm -f "${grub_cfg}.bak" "${grub_cfg}.sig.bak"
     msg_ok "GRUB config written to $grub_cfg"
     echo ""
 
     # 3. GPG sign everything
     msg_info "Signing boot files..."
-    "${SCRIPT_DIR}/sign-boot.sh"
+    if ! "${SCRIPT_DIR}/sign-boot.sh"; then
+        msg_error "sign-boot failed — restoring backup"
+        if [[ -f "${grub_cfg}.bak" ]]; then
+            mv "${grub_cfg}.bak" "$grub_cfg"
+            [[ -f "${grub_cfg}.sig.bak" ]] && mv "${grub_cfg}.sig.bak" "${grub_cfg}.sig"
+            msg_ok "Backup restored — previous signed state preserved"
+        fi
+        exit 1
+    fi
+
+    # Clean up backups only after everything succeeds
+    rm -f "${grub_cfg}.bak" "${grub_cfg}.sig.bak"
     echo ""
 
     msg_ok "=== Boot update complete ==="

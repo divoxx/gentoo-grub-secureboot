@@ -94,7 +94,7 @@ main() {
 
     # 7. Verify EFI boot entry
     msg_info "Checking EFI boot entries..."
-    if efibootmgr | grep -qi "$BOOTLOADER_ID"; then
+    if efibootmgr | grep -qiF "$BOOTLOADER_ID"; then
         msg_ok "EFI boot entry for '${BOOTLOADER_ID}' exists"
     else
         msg_warn "No EFI boot entry found for '${BOOTLOADER_ID}'."

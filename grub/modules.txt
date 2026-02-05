@@ -44,15 +44,9 @@ pbkdf2
 gcry_rijndael
 gcry_sha256
 
-# Display and graphics
+# Display and graphics (EFI-only — BIOS/VM modules omitted)
 all_video
 efi_gop
-efi_uga
-vbe
-vga
-video_bochs
-video_cirrus
-ieee1275_fb
 gfxterm
 gfxmenu
 font

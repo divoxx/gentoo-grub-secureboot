@@ -92,6 +92,42 @@ readonly _REQUIRED_VARS=(
     GPG_KEY_NAME
 )
 
+# Try to load config in degraded mode (for audit.sh).
+# Returns 0 if loaded, 1 if skipped (with defaults set).
+try_load_config() {
+    if [[ ! -f "$MACHINE_CONF" ]]; then
+        msg_warn "machine.conf not found — using defaults"
+        ESP_MOUNT="${ESP_MOUNT:-/boot}"
+        BOOTLOADER_ID="${BOOTLOADER_ID:-gentoo}"
+        GPG_KEY_NAME="${GPG_KEY_NAME:-grub}"
+        return 1
+    fi
+
+    local conf_owner conf_perms
+    conf_owner="$(stat -c '%u:%g' "$MACHINE_CONF" 2>/dev/null || echo "unknown")"
+    conf_perms="$(stat -c '%a' "$MACHINE_CONF" 2>/dev/null || echo "000")"
+
+    if [[ "$conf_owner" != "0:0" ]]; then
+        msg_warn "machine.conf not owned by root — skipping (owner: $(stat -c '%U:%G' "$MACHINE_CONF" 2>/dev/null))"
+        ESP_MOUNT="${ESP_MOUNT:-/boot}"
+        BOOTLOADER_ID="${BOOTLOADER_ID:-gentoo}"
+        GPG_KEY_NAME="${GPG_KEY_NAME:-grub}"
+        return 1
+    fi
+
+    if [[ "$conf_perms" != "600" ]]; then
+        msg_warn "machine.conf has unsafe permissions (mode $conf_perms) — skipping"
+        ESP_MOUNT="${ESP_MOUNT:-/boot}"
+        BOOTLOADER_ID="${BOOTLOADER_ID:-gentoo}"
+        GPG_KEY_NAME="${GPG_KEY_NAME:-grub}"
+        return 1
+    fi
+
+    # shellcheck source=../machine.conf.example
+    source "$MACHINE_CONF"
+    return 0
+}
+
 load_config() {
     if [[ ! -f "$MACHINE_CONF" ]]; then
         msg_error "machine.conf not found at: $MACHINE_CONF"
@@ -99,11 +135,17 @@ load_config() {
         exit 1
     fi
 
-    # Verify machine.conf is not world-writable (sourced as root)
-    local conf_perms
+    # Verify machine.conf ownership and permissions (sourced as root)
+    local conf_owner conf_perms
+    conf_owner="$(stat -c '%u:%g' "$MACHINE_CONF")"
     conf_perms="$(stat -c '%a' "$MACHINE_CONF")"
-    if [[ "${conf_perms: -1}" != "0" ]]; then
-        msg_error "machine.conf is world-accessible (mode $conf_perms)"
+    if [[ "$conf_owner" != "0:0" ]]; then
+        msg_error "machine.conf must be owned by root:root (current: $(stat -c '%U:%G' "$MACHINE_CONF"))"
+        msg_error "Fix with: chown root:root $MACHINE_CONF"
+        exit 1
+    fi
+    if [[ "$conf_perms" != "600" ]]; then
+        msg_error "machine.conf has unsafe permissions (mode $conf_perms, expected 600)"
         msg_error "Fix with: chmod 600 $MACHINE_CONF"
         exit 1
     fi
@@ -130,6 +172,19 @@ load_config() {
     if [[ "$ESP_MOUNT" != /* ]]; then
         msg_error "ESP_MOUNT must be an absolute path: $ESP_MOUNT"
         exit 1
+    fi
+
+    # Validate BOOTLOADER_ID format (used in filesystem paths)
+    if [[ ! "$BOOTLOADER_ID" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        msg_error "BOOTLOADER_ID contains invalid characters: $BOOTLOADER_ID"
+        msg_error "Only alphanumeric, hyphen, and underscore are allowed."
+        exit 1
+    fi
+
+    # Validate GPG_KEY_NAME is not empty (already caught by _REQUIRED_VARS,
+    # but warn if it looks unusual)
+    if [[ ! "$GPG_KEY_NAME" =~ ^[a-zA-Z0-9@._-]+$ ]]; then
+        msg_warn "GPG_KEY_NAME contains unusual characters: $GPG_KEY_NAME"
     fi
 }
 
@@ -159,6 +214,14 @@ read_modules() {
         msg_error "No modules found in $file"
         exit 1
     fi
+    # Validate module names contain only safe characters
+    local mod
+    for mod in $modules; do
+        if [[ ! "$mod" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+            msg_error "Invalid module name in $file: $mod"
+            exit 1
+        fi
+    done
     echo "$modules"
 }
 
@@ -168,11 +231,17 @@ read_modules() {
 gpg_sign() {
     local file="$1"
     local sig="${file}.sig"
+    local sig_tmp="${sig}.tmp"
 
-    # Remove old signature if it exists
-    [[ -f "$sig" ]] && rm -f "$sig"
-
-    gpg --batch --yes --default-key "$GPG_KEY_NAME" --detach-sign "$file"
+    # Sign to a temporary file first, then atomically move into place.
+    # This preserves the old signature if signing fails.
+    rm -f "$sig_tmp"
+    if gpg --batch --yes --default-key "$GPG_KEY_NAME" --output "$sig_tmp" --detach-sign "$file"; then
+        mv -f "$sig_tmp" "$sig"
+    else
+        rm -f "$sig_tmp"
+        return 1
+    fi
 }
 
 gpg_verify() {
@@ -184,5 +253,9 @@ gpg_verify() {
         return 1
     fi
 
-    gpg --batch --verify "$sig" "$file" 2>/dev/null
+    local gpg_output
+    if ! gpg_output="$(gpg --batch --verify "$sig" "$file" 2>&1)"; then
+        msg_error "GPG verification details: $gpg_output"
+        return 1
+    fi
 }

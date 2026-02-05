@@ -47,7 +47,7 @@ USE="grub_platforms_efi-64 device-mapper"
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/gentoo-grub-secureboot.git
+git clone <your-repo-url>
 cd gentoo-grub-secureboot
 ```
 
@@ -247,6 +247,7 @@ sudo audit-secureboot
 - The GPG public key is embedded in the GRUB binary
 - All boot files are signed with the GPG private key
 - Only the GRUB binary is signed with Secure Boot keys
+- **GRUB shell access**: Without GRUB password protection, anyone with physical console access can disable GPG verification via the GRUB shell. Consider implementing `set superusers` / `password_pbkdf2` in the embedded config. See: [Gentoo GRUB2 Password Protection](https://wiki.gentoo.org/wiki/GRUB2#Password_protection)
 
 Keep backups of your keys in a secure location.
 

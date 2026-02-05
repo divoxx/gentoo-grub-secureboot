@@ -195,7 +195,7 @@ Located at `/home/divoxx/code/own/gentoo-grub-secureboot/sign-grub-files.sh`
 gentoo-secureboot/
 ├── AGENTS.md                           # This file (Claude Code context)
 ├── README.md                           # User documentation
-├── LICENSE                             # MIT or similar
+├── LICENSE                             # GPL-3.0
 ├── .gitignore                          # Exclude secrets and generated files
 │
 ├── machine.conf.example                # Template for machine-specific values
@@ -207,11 +207,12 @@ gentoo-secureboot/
 │       └── 26_windows                  # Windows chainload entry (templated)
 │
 ├── scripts/
+│   ├── lib.sh                          # Shared utilities (colors, config, GPG)
 │   ├── setup.sh                        # First-time setup (interactive)
 │   ├── install.sh                      # Install/symlink scripts to system
 │   ├── build-grub.sh                   # Build standalone GRUB binary
 │   ├── sign-boot.sh                    # GPG sign on-disk boot files
-│   ├── update-boot.sh                  # Full update: build + mkconfig + sign
+│   ├── update-boot.sh                  # Full update: mkconfig + sign (no binary rebuild)
 │   └── audit.sh                        # Health check / verification
 │
 ├── hooks/
@@ -340,8 +341,8 @@ set prefix=($root)/grub
 configfile $prefix/grub.cfg
 
 # Fallback if grub.cfg fails
-echo "grub.cfg failed to boot. Rebooting in 10 seconds."
-sleep 10
+echo "grub.cfg failed to boot. Rebooting in 30 seconds."
+sleep 30
 reboot
 ```
 

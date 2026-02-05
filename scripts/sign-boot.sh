@@ -22,6 +22,14 @@ source "${SCRIPT_DIR}/lib.sh"
 require_root
 load_config
 
+# Prevent concurrent execution
+readonly _LOCKFILE="/var/lock/secureboot-update.lock"
+exec 9>"$_LOCKFILE"
+if ! flock -n 9; then
+    msg_error "Another instance of sign-boot/update-boot is running. Aborting."
+    exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # Collect files to sign
 # ---------------------------------------------------------------------------

@@ -8,6 +8,10 @@
 # When GRUB loads the Windows chainloader, GPG verification is
 # temporarily disabled (UEFI Secure Boot still validates the
 # Microsoft-signed bootmgfw.efi).
+#
+# Note: set check_signatures=no is scoped to this menuentry block.
+# GRUB restores the parent scope (enforce) when the entry exits,
+# whether by successful chainload or failure.
 
 # installed by gentoo-secureboot — do not edit
 # source UUID is baked in by install.sh
@@ -21,11 +25,7 @@ fi
 cat << GRUB
 menuentry "Windows Boot Manager" --class windows --class os {
     set check_signatures=no
-    insmod chain
-    insmod fat
-    insmod part_gpt
     search --fs-uuid --set=root ${WINDOWS_UUID}
     chainloader /EFI/Microsoft/Boot/bootmgfw.efi
-    set check_signatures=enforce
 }
 GRUB

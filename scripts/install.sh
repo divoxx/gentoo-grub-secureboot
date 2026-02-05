@@ -28,13 +28,17 @@ grub_default_set() {
     local value="$2"
     local file="/etc/default/grub"
 
-    # Escape sed metacharacters in value to prevent breakage
-    local escaped_value
-    escaped_value="$(printf '%s' "$value" | sed 's/[&\\/]/\\&/g')"
+    # Escape key for use in regex (handle potential metacharacters)
+    local escaped_key
+    escaped_key="$(printf '%s' "$key" | sed 's/[.[\*^$()+?{|]/\\&/g')"
 
-    if grep -qE "^#?\s*${key}=" "$file" 2>/dev/null; then
+    # Escape value for sed replacement (handle &, \, and | delimiter)
+    local escaped_value
+    escaped_value="$(printf '%s' "$value" | sed 's/[&\\/|]/\\&/g')"
+
+    if grep -qE "^#?\s*${escaped_key}=" "$file" 2>/dev/null; then
         # Replace first matching line only (commented or not)
-        sed -i "0,/^#\?\s*${key}=/{s|^#\?\s*${key}=.*|${key}=${escaped_value}|}" "$file"
+        sed -i "0,/^#\?\s*${escaped_key}=/{s|^#\?\s*${escaped_key}=.*|${key}=${escaped_value}|}" "$file"
     else
         echo "${key}=${value}" >> "$file"
     fi
@@ -45,8 +49,11 @@ grub_default_remove() {
     local key="$1"
     local file="/etc/default/grub"
 
-    if grep -qE "^#?\s*${key}=" "$file" 2>/dev/null; then
-        sed -i "/^#\?\s*${key}=/d" "$file"
+    local escaped_key
+    escaped_key="$(printf '%s' "$key" | sed 's/[.[\*^$()+?{|]/\\&/g')"
+
+    if grep -qE "^#?\s*${escaped_key}=" "$file" 2>/dev/null; then
+        sed -i "/^#\?\s*${escaped_key}=/d" "$file"
         msg_info "Removed $key from /etc/default/grub"
     fi
 }

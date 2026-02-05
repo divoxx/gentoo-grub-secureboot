@@ -92,11 +92,10 @@ ESP_MOUNT="/boot"
 GPG_KEY_NAME="grub"
 
 # ==============================================================================
-# GRUB Password (optional)
+# Security Note: GRUB Password Protection
 # ==============================================================================
-
-# If set, GRUB shell/edit access requires this password.
-# Normal boot remains unrestricted.
-# Generate with: grub-mkpasswd-pbkdf2
-# GRUB_PASSWORD_HASH=""
-# Example: GRUB_PASSWORD_HASH="grub.pbkdf2.sha512.10000.ABC...123"
+# Without a GRUB password, anyone with physical console access can
+# type 'set check_signatures=no' at the GRUB shell, bypassing GPG
+# verification. Consider implementing GRUB password protection via
+# 'set superusers' and 'password_pbkdf2' in initial.cfg.template.
+# See: https://wiki.gentoo.org/wiki/GRUB2#Password_protection

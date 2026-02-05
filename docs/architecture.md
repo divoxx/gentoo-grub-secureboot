@@ -31,7 +31,7 @@ The boot process follows this sequence:
    - `grub.cfg`
    - `kernel-*`
    - `initramfs-*.img`
-   - `amd-uc.img`
+   - CPU microcode (`amd-uc.img`, `intel-uc.img`)
 
 5. **Windows Boot Path**: When booting Windows, GRUB temporarily disables GPG signature checking and chainloads `bootmgfw.efi`. The UEFI firmware continues to validate the Microsoft PE signature on the Windows bootloader.
 
@@ -90,6 +90,7 @@ Different files require different signature types:
 | kernel-*          | Yes        | Yes       |
 | initramfs-*.img   | Yes        | No        |
 | amd-uc.img        | Yes        | No        |
+| intel-uc.img      | Yes        | No        |
 
 ### Notes
 
@@ -97,7 +98,7 @@ Different files require different signature types:
 - **grub.cfg**: GPG-signed because GRUB validates it after starting.
 - **kernel-***: Dual-signed because it's both an EFI binary (validated by firmware when using EFI stub) and a file loaded by GRUB (validated by GRUB's GPG).
 - **initramfs-*.img**: GPG-signed only because it's loaded by GRUB/kernel, not by firmware.
-- **amd-uc.img**: GPG-signed only because it's loaded by GRUB, not by firmware.
+- **amd-uc.img / intel-uc.img**: GPG-signed only because they're loaded by GRUB, not by firmware.
 
 ## Signing Order
 

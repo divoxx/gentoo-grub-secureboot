@@ -30,6 +30,12 @@ If GRUB refuses to load files due to signature verification failures, you have s
 
 If the standalone GRUB binary loads but refuses to load signed files:
 
+> **Security Warning:** This bypass is also the exact technique an attacker
+> with physical console access would use to boot unsigned kernels. Consider
+> implementing GRUB password protection (`set superusers` / `password_pbkdf2`)
+> to prevent unauthorized use of the GRUB shell. See the Gentoo wiki:
+> https://wiki.gentoo.org/wiki/GRUB2#Password_protection
+
 1. At GRUB prompt, disable signature checking:
    ```
    set check_signatures=no

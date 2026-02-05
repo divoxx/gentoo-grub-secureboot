@@ -95,7 +95,7 @@ Builds the standalone GRUB EFI binary:
 4. Runs `grub-mkstandalone` to create monolithic EFI binary
 5. Signs the EFI binary with `sbctl sign`
 
-### sign-boot.sh
+### sign-boot
 
 GPG signs boot components for GRUB verification:
 - GRUB configuration file
@@ -211,7 +211,7 @@ After changing the passphrase, test automated updates or ensure `gpg-agent` is p
 **Solutions:**
 1. Boot to system (if possible) and run: `update-boot`
 2. Rebuild GRUB binary: `build-grub && update-boot`
-3. Verify GPG key integrity: check `/boot/grub/pubkey.gpg` exists
+3. Verify GPG key integrity: check `/root/grub.pub` exists (public key is embedded in the GRUB binary at build time)
 4. Check signature files exist (`.sig` extensions on boot files)
 
 ## Best Practices
