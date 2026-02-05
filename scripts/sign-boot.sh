@@ -66,8 +66,24 @@ collect_files() {
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+cleanup_orphaned_sigs() {
+    local esp="$ESP_MOUNT"
+
+    for sig in "${esp}"/*.sig "${esp}"/grub/*.sig; do
+        [[ -f "$sig" ]] || continue
+        local base="${sig%.sig}"
+        if [[ ! -f "$base" ]]; then
+            msg_info "Removing orphaned signature: $(basename "$sig")"
+            rm -f "$sig"
+        fi
+    done
+}
+
 main() {
     msg_info "Signing boot files..."
+
+    # Clean up signatures for removed files
+    cleanup_orphaned_sigs
 
     local files
     mapfile -t files < <(collect_files)
@@ -87,10 +103,16 @@ main() {
         # PE-sign kernel files with sbctl first (modifies binary)
         if [[ "$basename" == kernel-* ]]; then
             msg_info "PE-signing $basename..."
-            if sbctl sign -s "$file"; then
-                msg_ok "PE-signed: $basename"
+            if ! sbctl sign -s "$file"; then
+                # Distinguish "already signed" from real failure
+                if sbctl verify "$file" 2>&1 | grep -q "is signed"; then
+                    msg_info "Already PE-signed: $basename"
+                else
+                    msg_error "PE-signing failed for $basename — aborting"
+                    exit 1
+                fi
             else
-                msg_warn "sbctl sign failed for $basename (may already be enrolled)"
+                msg_ok "PE-signed: $basename"
             fi
         fi
 
@@ -98,10 +120,10 @@ main() {
         msg_info "GPG-signing $basename..."
         if gpg_sign "$file"; then
             msg_ok "GPG-signed: $basename"
-            ((signed++))
+            signed=$((signed + 1))
         else
             msg_error "GPG-sign failed: $basename"
-            ((failed++))
+            failed=$((failed + 1))
         fi
     done
 
@@ -119,10 +141,10 @@ main() {
     for file in "${files[@]}"; do
         if gpg_verify "$file"; then
             msg_ok "Verified: $(basename "$file")"
-            ((verify_ok++))
+            verify_ok=$((verify_ok + 1))
         else
             msg_error "Verification FAILED: $(basename "$file")"
-            ((verify_fail++))
+            verify_fail=$((verify_fail + 1))
         fi
     done
 

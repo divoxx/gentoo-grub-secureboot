@@ -49,6 +49,13 @@ main() {
         exit 1
     fi
 
+    # Validate UUID format to prevent sed injection into initial config
+    if [[ ! "$LINUX_ESP_UUID" =~ ^[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}$ ]]; then
+        msg_error "LINUX_ESP_UUID has invalid format: $LINUX_ESP_UUID"
+        msg_error "Expected FAT32 UUID like D728-8DD1"
+        exit 1
+    fi
+
     sed "s/%%LINUX_ESP_UUID%%/${LINUX_ESP_UUID}/g" "$tpl" \
         > "${_TMPDIR}/initial.cfg"
 

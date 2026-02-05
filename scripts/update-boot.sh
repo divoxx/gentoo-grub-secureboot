@@ -35,12 +35,30 @@ main() {
     msg_ok "PE signatures updated."
     echo ""
 
-    # 2. Regenerate grub.cfg
+    # 2. Regenerate grub.cfg (with rollback on failure)
     local grub_cfg
     grub_cfg="$(grub_cfg_path)"
     msg_info "Regenerating GRUB config..."
     mkdir -p "$(dirname "$grub_cfg")"
-    grub-mkconfig -o "$grub_cfg"
+
+    # Back up current signed state
+    if [[ -f "$grub_cfg" && -f "${grub_cfg}.sig" ]]; then
+        cp "$grub_cfg" "${grub_cfg}.bak"
+        cp "${grub_cfg}.sig" "${grub_cfg}.sig.bak"
+    fi
+
+    if ! grub-mkconfig -o "$grub_cfg"; then
+        msg_error "grub-mkconfig failed — restoring backup"
+        if [[ -f "${grub_cfg}.bak" ]]; then
+            mv "${grub_cfg}.bak" "$grub_cfg"
+            [[ -f "${grub_cfg}.sig.bak" ]] && mv "${grub_cfg}.sig.bak" "${grub_cfg}.sig"
+            msg_ok "Backup restored"
+        fi
+        exit 1
+    fi
+
+    # Clean up backups on success
+    rm -f "${grub_cfg}.bak" "${grub_cfg}.sig.bak"
     msg_ok "GRUB config written to $grub_cfg"
     echo ""
 

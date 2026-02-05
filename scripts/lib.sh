@@ -99,6 +99,15 @@ load_config() {
         exit 1
     fi
 
+    # Verify machine.conf is not world-writable (sourced as root)
+    local conf_perms
+    conf_perms="$(stat -c '%a' "$MACHINE_CONF")"
+    if [[ "${conf_perms: -1}" != "0" ]]; then
+        msg_error "machine.conf is world-accessible (mode $conf_perms)"
+        msg_error "Fix with: chmod 600 $MACHINE_CONF"
+        exit 1
+    fi
+
     # shellcheck source=../machine.conf.example
     source "$MACHINE_CONF"
 
@@ -114,6 +123,12 @@ load_config() {
         for var in "${missing[@]}"; do
             msg_error "  $var"
         done
+        exit 1
+    fi
+
+    # Validate ESP_MOUNT is an absolute path
+    if [[ "$ESP_MOUNT" != /* ]]; then
+        msg_error "ESP_MOUNT must be an absolute path: $ESP_MOUNT"
         exit 1
     fi
 }
@@ -138,7 +153,13 @@ read_modules() {
         msg_error "Module list not found: $file"
         exit 1
     fi
-    grep -v '^\s*#' "$file" | grep -v '^\s*$' | tr '\n' ' ' | sed 's/ *$//'
+    local modules
+    modules="$(grep -v '^\s*#' "$file" | grep -v '^\s*$' | tr '\n' ' ' | sed 's/ *$//' || true)"
+    if [[ -z "$modules" ]]; then
+        msg_error "No modules found in $file"
+        exit 1
+    fi
+    echo "$modules"
 }
 
 # ---------------------------------------------------------------------------

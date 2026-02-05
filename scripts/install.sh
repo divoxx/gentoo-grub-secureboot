@@ -28,9 +28,13 @@ grub_default_set() {
     local value="$2"
     local file="/etc/default/grub"
 
+    # Escape sed metacharacters in value to prevent breakage
+    local escaped_value
+    escaped_value="$(printf '%s' "$value" | sed 's/[&\\/]/\\&/g')"
+
     if grep -qE "^#?\s*${key}=" "$file" 2>/dev/null; then
-        # Replace existing line (commented or not)
-        sed -i "s|^#\?\s*${key}=.*|${key}=${value}|" "$file"
+        # Replace first matching line only (commented or not)
+        sed -i "0,/^#\?\s*${key}=/{s|^#\?\s*${key}=.*|${key}=${escaped_value}|}" "$file"
     else
         echo "${key}=${value}" >> "$file"
     fi
@@ -86,6 +90,13 @@ install_26_windows() {
             msg_info "Removed $dst (Windows not configured)"
         fi
         return
+    fi
+
+    # Validate UUID format to prevent sed injection
+    if [[ ! "$WINDOWS_ESP_UUID" =~ ^[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}$ ]]; then
+        msg_error "WINDOWS_ESP_UUID has invalid format: $WINDOWS_ESP_UUID"
+        msg_error "Expected FAT32 UUID like 90B1-2A22"
+        exit 1
     fi
 
     # Generate self-contained version with UUID baked in
@@ -167,7 +178,8 @@ configure_grub_defaults() {
         # Root device path
         if [[ -n "${LVM_LV_ROOT:-}" ]]; then
             local vg_escaped="${LVM_VG//-/--}"
-            cmdline="${cmdline} root=/dev/mapper/${vg_escaped}-${LVM_LV_ROOT}"
+            local lv_escaped="${LVM_LV_ROOT//-/--}"
+            cmdline="${cmdline} root=/dev/mapper/${vg_escaped}-${lv_escaped}"
         fi
     fi
 

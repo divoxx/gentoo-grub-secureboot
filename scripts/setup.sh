@@ -24,9 +24,9 @@ prompt_value() {
     local value
 
     if [[ -n "$default" ]]; then
-        echo -n "  ${description} [${default}]: "
+        echo -n "  ${description} [${default}]: " >&2
     else
-        echo -n "  ${description}: "
+        echo -n "  ${description}: " >&2
     fi
     read -r value
     value="${value:-$default}"
@@ -36,7 +36,7 @@ prompt_value() {
 confirm() {
     local prompt="$1"
     local response
-    echo -n "$prompt [y/N]: "
+    echo -n "$prompt [y/N]: " >&2
     read -r response
     [[ "$response" =~ ^[Yy] ]]
 }
@@ -237,6 +237,9 @@ EOF
 
     chmod 600 "$MACHINE_CONF"
     msg_ok "machine.conf written"
+
+    # Validate required fields are present
+    load_config
 }
 
 # ---------------------------------------------------------------------------
@@ -246,8 +249,8 @@ setup_gpg_key() {
     msg_info "=== GPG Key Setup ==="
     echo ""
 
-    # Source config to get GPG_KEY_NAME
-    source "$MACHINE_CONF"
+    # Load config to get GPG_KEY_NAME (with validation)
+    load_config
 
     if gpg --list-keys "$GPG_KEY_NAME" &>/dev/null; then
         msg_ok "GPG key '$GPG_KEY_NAME' found in root keyring"

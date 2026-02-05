@@ -25,7 +25,14 @@ IS_ROOT=false
 
 # Try to load config; continue without it for degraded mode
 if [[ -f "$MACHINE_CONF" ]]; then
-    source "$MACHINE_CONF"
+    # Verify permissions before sourcing (runs as root)
+    local_perms="$(stat -c '%a' "$MACHINE_CONF" 2>/dev/null || echo "000")"
+    if [[ "${local_perms: -1}" != "0" ]]; then
+        msg_warn "machine.conf is world-accessible (mode $local_perms) — skipping"
+    else
+        # shellcheck source=../machine.conf.example
+        source "$MACHINE_CONF"
+    fi
 else
     msg_warn "machine.conf not found — using defaults"
     ESP_MOUNT="${ESP_MOUNT:-/boot}"
@@ -40,9 +47,9 @@ PASS=0
 FAIL=0
 WARN=0
 
-audit_pass() { ((PASS++)); msg_ok "PASS: $*"; }
-audit_fail() { ((FAIL++)); msg_error "FAIL: $*"; }
-audit_warn() { ((WARN++)); msg_warn "WARN: $*"; }
+audit_pass() { PASS=$((PASS + 1)); msg_ok "PASS: $*"; }
+audit_fail() { FAIL=$((FAIL + 1)); msg_error "FAIL: $*"; }
+audit_warn() { WARN=$((WARN + 1)); msg_warn "WARN: $*"; }
 
 # ---------------------------------------------------------------------------
 # Checks
@@ -249,6 +256,22 @@ check_efi_boot_entry() {
     fi
 }
 
+check_file_permissions() {
+    msg_info "--- File Permissions ---"
+
+    if [[ -f "$MACHINE_CONF" ]]; then
+        local perms
+        perms="$(stat -c '%a' "$MACHINE_CONF")"
+        if [[ "$perms" == "600" ]]; then
+            audit_pass "machine.conf has restrictive permissions ($perms)"
+        else
+            audit_warn "machine.conf has permissive permissions: $perms (expected 600)"
+        fi
+    else
+        audit_warn "machine.conf not found — cannot check permissions"
+    fi
+}
+
 check_kernel_hook() {
     msg_info "--- Kernel Hook ---"
 
@@ -291,6 +314,8 @@ main() {
     check_grub_defaults
     echo ""
     check_efi_boot_entry
+    echo ""
+    check_file_permissions
     echo ""
     check_kernel_hook
 

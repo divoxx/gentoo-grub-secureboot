@@ -19,6 +19,7 @@ true
 search
 search_fs_uuid
 search_fs_file
+search_label
 
 # Filesystem and partition support
 ext2
@@ -65,4 +66,3 @@ chain
 loadenv
 minicmd
 gettext
-bli
